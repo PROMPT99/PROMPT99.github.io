@@ -1,1 +1,696 @@
-# PROMPT99.github.io
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photosphere UI</title>
+    <style>
+        :root {
+            --buttons-top: -70px;
+            --logo-top: 12px;
+            --logo-left: 28px;
+            --logo-width: min(26vw, 320px);
+            --logo-scale: 1;
+            --logo-padding: 8px;
+            --logo-edge-offset: 12px;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            font-family: monospace;
+            overflow: hidden;
+            background-color: black;
+            position: relative;
+        }
+
+        .terminal-bg {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            color: #c0c0c0;
+            background: #000;
+            font-family: "Cascadia Mono", Consolas, monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            opacity: 0.8;
+            z-index: 0;
+        }
+
+        .terminal-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 12px 18px;
+            box-sizing: border-box;
+        }
+
+        .terminal-line {
+            white-space: nowrap;
+            visibility: hidden;
+        }
+
+        .terminal-line.visible {
+            visibility: visible;
+        }
+
+        .terminal-prompt {
+            color: #fff;
+        }
+
+        .terminal-output {
+            color: #8f8f8f;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            box-sizing: border-box;
+            pointer-events: none;
+            transform: translate(-50%, -50%);
+            background-image:
+                linear-gradient(90deg, rgba(255, 255, 255, 0.8) 50%, transparent 50%),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.8) 50%, transparent 50%),
+                linear-gradient(0deg, rgba(255, 255, 255, 0.8) 50%, transparent 50%),
+                linear-gradient(0deg, rgba(255, 255, 255, 0.8) 50%, transparent 50%);
+            background-size: 24px 2px, 24px 2px, 2px 24px, 2px 24px;
+            background-position: 0 0, 0 100%, 0 0, 100% 0;
+            background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+            animation: dashOrbit 2s linear infinite;
+            z-index: 3;
+        }
+
+        .ascii-globe {
+            position: absolute;
+            top: 1%;
+            right: 2%;
+            width: min(38vw, 520px);
+            height: min(38vw, 520px);
+            color: rgba(255, 255, 255, 0.72);
+            font-family: "Cascadia Mono", Consolas, monospace;
+            font-size: min(2.2vw, 30px);
+            line-height: 1;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .globe-frame {
+            position: absolute;
+            inset: 0;
+            margin: 0;
+            opacity: 0;
+            animation: globeFrame 4s steps(1, end) infinite;
+        }
+
+        .globe-frame:nth-child(2) {
+            animation-delay: -1s;
+        }
+
+        .globe-frame:nth-child(3) {
+            animation-delay: -2s;
+        }
+
+        .globe-frame:nth-child(4) {
+            animation-delay: -3s;
+        }
+
+        .image-layer {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 80%;
+            background-image: url('ascii-art.png');
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .cloud-layer {
+            position: absolute;
+            pointer-events: none;
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: cover;
+            opacity: 0.4;
+            mix-blend-mode: screen;
+            z-index: 1;
+        }
+
+        .cloud-left {
+            top: 30%;
+            left: 0;
+            width: 10%;
+            height: 40%;
+            background-image: url('Two.png');
+            background-position: 12% center;
+        }
+
+        .cloud-right {
+            top: 23%;
+            right: 0;
+            width: 10%;
+            height: 42%;
+            background-image: url('Two.png');
+            background-position: 88% center;
+        }
+
+        .cloud-bottom-right {
+            right: 3%;
+            bottom: 2%;
+            width: 14%;
+            height: 15%;
+            background-image: url('One.png');
+            background-position: 76% 68%;
+        }
+
+        .star-field {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-family: "Cascadia Mono", Consolas, monospace;
+            font-size: 9px;
+            line-height: 1;
+            z-index: 1;
+        }
+
+        .star {
+            position: absolute;
+            animation: starTwinkle 3.8s ease-in-out infinite;
+        }
+
+        .star:nth-child(2) { animation-delay: -1.1s; }
+        .star:nth-child(3) { animation-delay: -2.4s; }
+        .star:nth-child(4) { animation-delay: -0.7s; }
+        .star:nth-child(5) { animation-delay: -3s; }
+        .star:nth-child(6) { animation-delay: -1.8s; }
+        .star:nth-child(7) { animation-delay: -2.8s; }
+        .star:nth-child(8) { animation-delay: -0.3s; }
+        .star:nth-child(9) { animation-delay: -2.1s; }
+        .star:nth-child(10) { animation-delay: -1.4s; }
+        .star:nth-child(11) { animation-delay: -3.4s; }
+        .star:nth-child(12) { animation-delay: -0.4s; }
+        .star:nth-child(13) { animation-delay: -2.7s; }
+        .star:nth-child(14) { animation-delay: -1.9s; }
+
+        .star-one { top: 8%; left: 30%; }
+        .star-two { top: 9%; left: 40%; }
+        .star-three { top: 8%; left: 50%; }
+        .star-four { top: 9%; left: 60%; }
+        .star-five { top: 8%; left: 69%; }
+        .star-six { top: 9%; left: 76%; }
+        .star-seven { top: 8%; left: 82%; }
+        .star-eight { top: 15%; left: 1.5%; }
+        .star-nine { top: 22%; left: 5%; }
+        .star-ten { top: 15%; right: 1.5%; }
+        .star-eleven { top: 20%; right: 5%; }
+        .star-twelve { top: 73%; left: 3%; }
+        .star-thirteen { top: 75%; right: 3%; }
+        .star-fourteen { top: 82%; left: 7%; }
+
+        @keyframes starTwinkle {
+            0%, 100% { opacity: 0.3; transform: translate(0, 0) scale(0.9); }
+            50% { opacity: 1; transform: translate(2px, -2px) scale(1.1); }
+        }
+
+        .dino-game {
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            width: 80%;
+            height: 18%;
+            min-height: 140px;
+            transform: translateX(-50%);
+            overflow: hidden;
+            color: white;
+            font-family: "Cascadia Mono", Consolas, monospace;
+            z-index: 5;
+        }
+
+        .dino-runner {
+            position: absolute;
+            bottom: 5px;
+            left: 0;
+            margin: 0;
+            width: 46px;
+            height: 59px;
+            overflow: hidden;
+            will-change: transform;
+        }
+
+        .dino-runner-frame {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            background-image: url("DinoSpriteSheet.png");
+            background-repeat: no-repeat;
+            background-size: 138px 59px;
+            background-position: 0 3px;
+            animation: dinoSprite 0.42s steps(1, end) infinite;
+        }
+
+        .dino-obstacle {
+            position: absolute;
+            left: 42%;
+            bottom: 0;
+            margin: 0;
+            width: 30px;
+            height: 42px;
+            background-image: url("CactusSpriteSheet.png");
+            background-repeat: no-repeat;
+            background-size: 150px 61px;
+            background-position: 0 -9px;
+        }
+
+        .dino-obstacle.second {
+            left: 62%;
+            background-position: -30px -9px;
+        }
+
+        .dino-obstacle.third {
+            left: 82%;
+            background-position: -60px -9px;
+        }
+
+        .dino-obstacle.fourth {
+            left: 22%;
+            background-position: -90px -9px;
+        }
+
+        .dino-obstacle.fifth {
+            left: 72%;
+            background-position: -120px -9px;
+        }
+
+        /* Positions the slots roughly where they are in your image */
+        .ui-container {
+            position: absolute;
+            top: 10.5%;
+            left: 10.05%;
+            width: 80%;
+            height: 80%;
+            z-index: 4;
+        }
+
+        .brand-logo {
+            position: absolute;
+            top: var(--logo-edge-offset);
+            left: var(--logo-left);
+            width: var(--logo-width);
+            height: auto;
+            display: block;
+            padding: var(--logo-padding);
+            box-sizing: border-box;
+            opacity: 0.96;
+            transform: scale(var(--logo-scale));
+            transform-origin: top left;
+            z-index: 4;
+            pointer-events: none;
+        }
+
+        .button-group {
+            position: absolute;
+            top: var(--buttons-top);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 34px;
+            z-index: 5;
+            align-items: flex-start;
+        }
+
+        /* Borderless text navigation */
+        .btn {
+            width: auto;
+            min-width: 52px;
+            height: auto;
+            background-color: transparent;
+            border: 0;
+            padding: 0;
+            color: #fff;
+            font: 14px "Cascadia Mono", Consolas, monospace;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            transition: opacity 0.2s;
+            box-sizing: border-box;
+        }
+
+        .btn:hover {
+            opacity: 0.72;
+        }
+
+        .tools-arrow {
+            margin-top: 2px;
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        .tools-menu {
+            visibility: hidden;
+            background-color: rgba(0, 0, 0, 0.92);
+            color: #fff;
+            padding: 7px 0;
+            position: absolute;
+            z-index: 10;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.18s ease-in-out;
+            font-size: 12px;
+            pointer-events: none;
+        }
+
+        .tools-menu a {
+            display: block;
+            padding: 6px 13px;
+            color: #fff;
+            text-decoration: none;
+            opacity: 0.8;
+        }
+
+        .tools-menu a:hover {
+            background: rgba(255, 255, 255, 0.1);
+            opacity: 1;
+        }
+
+        .tools-btn:hover .tools-menu,
+        .tools-btn:focus-within .tools-menu {
+            visibility: visible;
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* --- Animations --- */
+        
+        /* Eye Pupil Animation */
+        .pupil {
+            animation: scan 2s infinite alternate ease-in-out;
+        }
+        @keyframes scan {
+            0% { transform: translateX(-3px); }
+            100% { transform: translateX(3px); }
+        }
+
+        /* Globe Spin Animation */
+        .spin {
+            animation: spinGlobe 4s linear infinite;
+        }
+        @keyframes spinGlobe {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes dashOrbit {
+            0% {
+                background-position: 0 0, 0 100%, 0 0, 100% 0;
+            }
+            100% {
+                background-position: 24px 0, -24px 100%, 0 -24px, 100% 24px;
+            }
+        }
+
+        @keyframes globeFrame {
+            0%, 24.9% { opacity: 1; }
+            25%, 100% { opacity: 0; }
+        }
+
+        @keyframes dinoSprite {
+            0%, 33.2% { background-position: 0 3px; }
+            33.3%, 66.5% { background-position: -46px 3px; }
+            66.6%, 100% { background-position: -92px 3px; }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="terminal-bg" aria-hidden="true">
+        <div class="terminal-lines">
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest&gt; whoami</span></div>
+            <div class="terminal-line"><span class="terminal-output">guest\workstation</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest&gt; cd projects\photosphere</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest\projects\photosphere&gt; npm run build</span></div>
+            <div class="terminal-line"><span class="terminal-output">&gt; photosphere-ui@1.0.0 build</span></div>
+            <div class="terminal-line"><span class="terminal-output">&gt; vite build</span></div>
+            <div class="terminal-line"><span class="terminal-output">transforming modules...</span></div>
+            <div class="terminal-line"><span class="terminal-output">processing scene/background.css</span></div>
+            <div class="terminal-line"><span class="terminal-output">processing components/ControlPanel.js</span></div>
+            <div class="terminal-line"><span class="terminal-output">optimizing assets and preparing bundle...</span></div>
+            <div class="terminal-line"><span class="terminal-output">compiled successfully in 1.84s</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest\projects\photosphere&gt; git status</span></div>
+            <div class="terminal-line"><span class="terminal-output">On branch main</span></div>
+            <div class="terminal-line"><span class="terminal-output">Changes ready for review</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest\projects\photosphere&gt; npm run dev</span></div>
+            <div class="terminal-line"><span class="terminal-output">starting local development server...</span></div>
+            <div class="terminal-line"><span class="terminal-output">ready - listening on http://localhost:5173</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest\projects\photosphere&gt; ping localhost</span></div>
+            <div class="terminal-line"><span class="terminal-output">Reply from 127.0.0.1: time&lt;1ms</span></div>
+            <div class="terminal-line"><span class="terminal-output">Reply from 127.0.0.1: time&lt;1ms</span></div>
+            <div class="terminal-line"><span class="terminal-prompt">C:\Users\guest\projects\photosphere&gt; echo Rendering interface</span></div>
+            <div class="terminal-line"><span class="terminal-output">Rendering interface...</span></div>
+        </div>
+    </div>
+
+        <div class="ascii-globe" aria-hidden="true">
+                <pre class="globe-frame">       .-""""-.
+        .-'  .--.  '-.
+    .'   .'    '.   '.
+ /   .'  ()    '.   \
+;   /            \   ;
+|  |      ()      |  |
+;   \            /   ;
+ \   '.        .'   /
+    '.   '-.__.-'   .'
+        '-.______.-'</pre>
+                <pre class="globe-frame">       .-""""-.
+        .-'  .--.  '-.
+    .'   /    \   '.
+ /   /   ()   \   \
+;   ;          ;   ;
+|  |     ()     |  |
+;   ;          ;   ;
+ \   \        /   /
+    '.  '-.__.-'  .'
+        '-.______.-'</pre>
+                <pre class="globe-frame">       .-""""-.
+        .-'  .--.  '-.
+    .'   /      \   '.
+ /   /   (  )   \   \
+;   ;            ;   ;
+|  |      ()      |  |
+;   ;            ;   ;
+ \   \          /   /
+    '.  '-.____.-'  .'
+        '-.______.-'</pre>
+                <pre class="globe-frame">       .-""""-.
+        .-'  .--.  '-.
+    .'   '.    .'   '.
+ /   '.  ()  .'   \
+;   '          '   ;
+|  |     ()     |  |
+;   '          '   ;
+ \   '.      .'   /
+    '.   '-.__.-'   .'
+        '-.______.-'</pre>
+        </div>
+
+    <div class="image-layer" aria-hidden="true"></div>
+
+    <div class="cloud-layer cloud-left" aria-hidden="true"></div>
+    <div class="cloud-layer cloud-right" aria-hidden="true"></div>
+    <div class="cloud-layer cloud-bottom-right" aria-hidden="true"></div>
+
+        <div class="star-field" aria-hidden="true">
+        <span class="star star-one">*</span>
+        <span class="star star-two">+</span>
+        <span class="star star-three">.</span>
+        <span class="star star-four">*</span>
+        <span class="star star-five">+</span>
+        <span class="star star-six">.</span>
+        <span class="star star-seven">*</span>
+        <span class="star star-eight">+</span>
+        <span class="star star-nine">*</span>
+        <span class="star star-ten">.</span>
+        <span class="star star-eleven">*</span>
+        <span class="star star-twelve">+</span>
+        <span class="star star-thirteen">*</span>
+        <span class="star star-fourteen">.</span>
+        </div>
+
+        <div class="dino-game" aria-hidden="true">
+                <div class="dino-runner">
+                                        <div class="dino-runner-frame"></div>
+                </div>
+                <div class="dino-obstacle"></div>
+                <div class="dino-obstacle second"></div>
+                <div class="dino-obstacle third"></div>
+                <div class="dino-obstacle fourth"></div>
+                <div class="dino-obstacle fifth"></div>
+    </div>
+
+    <div class="ui-container">
+        <img class="brand-logo" src="ascii-art-text__1_-removebg-preview.png" alt="Brand logo" />
+
+        <div class="button-group">
+            <div class="btn tools-btn" tabindex="0">
+                <span>Tools</span>
+                <span class="tools-arrow" aria-hidden="true">▼</span>
+                <div class="tools-menu">
+                    <a href="#earth-searcher">Earth Searcher</a>
+                    <a href="#planetary-tool">Planetary Tool</a>
+                    <a href="#wip">WIP</a>
+                </div>
+            </div>
+            <div class="btn" tabindex="0">About</div>
+            <div class="btn" tabindex="0">Play</div>
+        </div>
+    </div>
+
+    <script>
+        const dinoGame = document.querySelector(".dino-game");
+        const dinoRunner = dinoGame.querySelector(".dino-runner");
+        const dinoObstacles = [...dinoGame.querySelectorAll(".dino-obstacle")];
+        let dinoY = 0;
+        let dinoX = -46;
+        let dinoVelocity = 0;
+        let dinoLastTime = performance.now();
+        let dinoJumpedObstacle = null;
+
+        function placeCactuses() {
+            const positions = [];
+            while (positions.length < dinoObstacles.length) {
+                const position = 12 + Math.random() * 76;
+                if (positions.every((existingPosition) => Math.abs(existingPosition - position) >= 12)) {
+                    positions.push(position);
+                }
+            }
+
+            positions.sort((first, second) => first - second);
+            dinoObstacles.forEach((obstacle, index) => {
+                obstacle.style.left = `${positions[index]}%`;
+            });
+        }
+
+        placeCactuses();
+
+        function animateDino(timestamp) {
+            const deltaTime = Math.min((timestamp - dinoLastTime) / 1000, 0.05);
+            dinoLastTime = timestamp;
+            const gameWidth = dinoGame.clientWidth;
+            const speed = Math.max(36, gameWidth * 0.1);
+
+            dinoX += speed * deltaTime;
+            if (dinoX > gameWidth + dinoRunner.offsetWidth) {
+                dinoX = -dinoRunner.offsetWidth;
+                dinoJumpedObstacle = null;
+            }
+
+            const jumpGravity = 360;
+            const jumpHeight = Math.min(46, dinoGame.clientHeight * 0.65);
+            const jumpVelocity = Math.sqrt(2 * jumpGravity * jumpHeight);
+            dinoVelocity += jumpGravity * deltaTime;
+            dinoY = Math.min(0, dinoY + dinoVelocity * deltaTime);
+            if (dinoY === 0) {
+                dinoVelocity = 0;
+            }
+            dinoRunner.style.transform = `translate(${dinoX}px, ${dinoY}px)`;
+
+            const runnerBox = dinoRunner.getBoundingClientRect();
+            const approachingCactus = dinoObstacles
+                .map((obstacle) => ({ obstacle, box: obstacle.getBoundingClientRect() }))
+                .filter(({ box }) => box.left > runnerBox.right)
+                .sort((first, second) => first.box.left - second.box.left)[0];
+
+            if (dinoJumpedObstacle) {
+                const jumpedBox = dinoJumpedObstacle.getBoundingClientRect();
+                if (jumpedBox.right < runnerBox.left) {
+                    dinoJumpedObstacle = null;
+                }
+            }
+
+            if (approachingCactus && dinoY === 0 && approachingCactus.obstacle !== dinoJumpedObstacle) {
+                const distance = approachingCactus.box.left - runnerBox.right;
+                const jumpDuration = (4 * jumpVelocity) / jumpGravity;
+                const jumpLead = speed * (jumpDuration * 0.025) + approachingCactus.box.width + 6;
+                if (distance <= jumpLead) {
+                    dinoVelocity = -jumpVelocity;
+                    dinoJumpedObstacle = approachingCactus.obstacle;
+                }
+            }
+
+            requestAnimationFrame(animateDino);
+        }
+
+        requestAnimationFrame(animateDino);
+
+        const terminalLines = [...document.querySelectorAll(".terminal-line")];
+        const originalText = terminalLines.map((line) => line.textContent);
+        const wait = (duration) => new Promise((resolve) => setTimeout(resolve, duration));
+
+        async function typeCommand(promptLine, text) {
+            const prompt = promptLine.querySelector(".terminal-prompt");
+            promptLine.classList.add("visible");
+            prompt.textContent = "";
+
+            for (const character of text) {
+                prompt.textContent += character;
+                await wait(32);
+            }
+        }
+
+        async function runTerminalLoop() {
+            while (true) {
+                terminalLines.forEach((line, index) => {
+                    line.classList.remove("visible");
+                    const prompt = line.querySelector(".terminal-prompt");
+                    if (prompt) {
+                        prompt.textContent = originalText[index];
+                    }
+                });
+
+                let lineIndex = 0;
+                while (lineIndex < terminalLines.length) {
+                    const line = terminalLines[lineIndex];
+                    if (line.querySelector(".terminal-prompt")) {
+                        await typeCommand(line, originalText[lineIndex]);
+                        await wait(450);
+                        lineIndex += 1;
+
+                        while (lineIndex < terminalLines.length && !terminalLines[lineIndex].querySelector(".terminal-prompt")) {
+                            terminalLines[lineIndex].classList.add("visible");
+                            lineIndex += 1;
+                        }
+                    } else {
+                        line.classList.add("visible");
+                        lineIndex += 1;
+                    }
+
+                    await wait(650);
+                }
+
+                await wait(1800);
+            }
+        }
+
+        runTerminalLoop();
+    </script>
+
+</body>
+</html>
